@@ -14,7 +14,20 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+// Allow all origins
+app.use(cors());
+
+// Allow specific origin(s)
+app.use(
+  cors({
+    origin: [
+      "https://fullstack-mern-blog-lcft6zrjr-ramihomsis-projects.vercel.app",
+      "http://localhost:3000",
+    ],
+    methods: ["POST", "GET", "DELETE", "PUT"],
+    credentials: true,
+  })
+);
 app.use("/uploads", express.static(__dirname + "/uploads"));
 
 require("dotenv").config();
