@@ -21,7 +21,7 @@ app.use(cors());
 app.use(
   cors({
     origin: [
-      "https://fullstack-mern-blog-lcft6zrjr-ramihomsis-projects.vercel.app",
+      "https://fullstack-mern-blog-lcft6zrjr-ramihomsis-projects.vercel.app/api",
       "http://localhost:3000",
     ],
     methods: ["POST", "GET", "DELETE", "PUT"],
@@ -54,7 +54,7 @@ mongoose
     console.error(err);
   });
 
-app.post("/register", async (req, res) => {
+app.post("/api/register", async (req, res) => {
   try {
     const user = await UserModel.create({
       username: req.body.username,
@@ -68,7 +68,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   const userDoc = await UserModel.findOne({ username });
 
@@ -103,7 +103,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", async (req, res) => {
+app.get("/api/profile", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
   const { token } = req.cookies;
   if (token) {
@@ -122,12 +122,12 @@ app.get("/profile", async (req, res) => {
   }); */
 });
 
-app.post("/logout", (req, res) => {
+app.post("/api/logout", (req, res) => {
   res.cookie("token", "").json("ok");
 });
 
 // name file coming from FormData
-app.post("/post", uploadMiddleware.single("file"), async (req, res) => {
+app.post("/api/post", uploadMiddleware.single("file"), async (req, res) => {
   // Extract file information
   const { originalname, path } = req.file;
   const parts = originalname.split(".");
@@ -167,7 +167,7 @@ app.post("/post", uploadMiddleware.single("file"), async (req, res) => {
   });
 });
 
-app.put("/post", uploadMiddleware.single("file"), async (req, res) => {
+app.put("/api/post", uploadMiddleware.single("file"), async (req, res) => {
   let newPath = null;
   if (req.file) {
     const { originalname, path } = req.file;
@@ -222,7 +222,7 @@ app.put("/post", uploadMiddleware.single("file"), async (req, res) => {
   });
 });
 
-app.get("/post", async (req, res) => {
+app.get("/api/post", async (req, res) => {
   const posts = await PostModel.find()
     .populate("author", ["username"])
     .sort({ createdAt: -1 })
@@ -230,7 +230,7 @@ app.get("/post", async (req, res) => {
   res.json(posts);
 });
 
-app.get("/post/:id", async (req, res) => {
+app.get("/api/post/:id", async (req, res) => {
   const { id } = req.params;
   const postDoc = await PostModel.findById(id).populate("author", ["username"]);
   res.json(postDoc);
