@@ -5,7 +5,7 @@ import { UserContext } from "./UserContext";
 export default function Header() {
   const { setUserInfo, userInfo } = useContext(UserContext);
   useEffect(() => {
-    fetch("http://localhost:3001/profile", {
+    fetch("https://fullstack-mern-blog-sigma.vercel.app/api/profile", {
       credentials: "include",
     }).then((response) => {
       response.json().then((userInfo) => {
@@ -15,7 +15,7 @@ export default function Header() {
   }, [setUserInfo]);
 
   function logout() {
-    fetch("http://localhost:3001/logout", {
+    fetch("https://fullstack-mern-blog-sigma.vercel.app/api/logout", {
       credentials: "include",
       method: "POST",
     });

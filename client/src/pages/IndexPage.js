@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 export default function IndexPage() {
   const [posts, setPosts] = useState([]);
   useEffect(() => {
-    fetch("http://localhost:3001/post").then((response) => {
-      response.json().then((posts) => {
-        setPosts(posts);
-      });
-    });
+    fetch("https://fullstack-mern-blog-sigma.vercel.app/api/post").then(
+      (response) => {
+        response.json().then((posts) => {
+          setPosts(posts);
+        });
+      }
+    );
   }, [posts, setPosts]);
 
   return (

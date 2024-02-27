@@ -5,7 +5,12 @@ export default function Post(props) {
     <div className="post">
       <div className="image">
         <Link to={`/post/${props._id}`}>
-          <img src={"http://localhost:3001/" + props.cover} alt="" />
+          <img
+            src={
+              "https://fullstack-mern-blog-sigma.vercel.app/api/" + props.cover
+            }
+            alt=""
+          />
         </Link>
       </div>
       <div className="texts">

@@ -8,11 +8,13 @@ export default function PostPage() {
   const { userInfo } = useContext(UserContext);
   const { id } = useParams();
   useEffect(() => {
-    fetch(`http://localhost:3001/post/${id}`).then((response) => {
-      response.json().then((postInfo) => {
-        setPostInfo(postInfo);
-      });
-    });
+    fetch(`https://fullstack-mern-blog-sigma.vercel.app/api/post/${id}`).then(
+      (response) => {
+        response.json().then((postInfo) => {
+          setPostInfo(postInfo);
+        });
+      }
+    );
   }, [id]);
 
   if (!postInfo) return "";
@@ -44,7 +46,10 @@ export default function PostPage() {
         </div>
       )}
       <div className="image">
-        <img src={`http://localhost:3001/${postInfo.cover}`} alt="" />
+        <img
+          src={`https://fullstack-mern-blog-sigma.vercel.app/api/${postInfo.cover}`}
+          alt=""
+        />
       </div>
       <div
         className="content"

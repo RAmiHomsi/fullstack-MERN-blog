@@ -13,7 +13,20 @@ const fs = require("fs");
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+// Allow all origins
+app.use(cors());
+
+// Allow specific origin(s)
+app.use(
+  cors({
+    origin: [
+      "https://fullstack-mern-blog-sigma.vercel.app/api",
+      "http://localhost:3000/api",
+    ],
+    methods: ["POST", "GET", "DELETE", "PUT"],
+    credentials: true,
+  })
+);
 app.use("/uploads", express.static(__dirname + "/uploads"));
 
 require("dotenv").config();
