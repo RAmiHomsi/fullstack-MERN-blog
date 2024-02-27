@@ -14,10 +14,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 app.use(express.json());
 app.use(cookieParser());
-// Allow all origins
-app.use(cors());
 
-// Allow specific origin(s)
 app.use(
   cors({
     origin: [
