@@ -21,7 +21,7 @@ app.use(cors());
 app.use(
   cors({
     origin: [
-      "https://fullstack-mern-blog-lcft6zrjr-ramihomsis-projects.vercel.app/api",
+      "https://fullstack-mern-blog-seven.vercel.app/api",
       "http://localhost:3000",
     ],
     methods: ["POST", "GET", "DELETE", "PUT"],
