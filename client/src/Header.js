@@ -5,7 +5,7 @@ import { UserContext } from "./UserContext";
 export default function Header() {
   const { setUserInfo, userInfo } = useContext(UserContext);
   useEffect(() => {
-    fetch("https://fullstack-mern-blog-sigma.vercel.app/api/profile", {
+    fetch(`${process.env.REACT_APP_BASE_URL}/profile`, {
       credentials: "include",
     }).then((response) => {
       response.json().then((userInfo) => {
@@ -15,7 +15,7 @@ export default function Header() {
   }, [setUserInfo]);
 
   function logout() {
-    fetch("https://fullstack-mern-blog-sigma.vercel.app/api/logout", {
+    fetch(`${process.env.REACT_APP_BASE_URL}/logout`, {
       credentials: "include",
       method: "POST",
     });

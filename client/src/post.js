@@ -1,16 +1,15 @@
 import { Link } from "react-router-dom";
 
 export default function Post(props) {
+  const srcImage =
+    props && props.cover && props.cover.includes("https://") //s3 image url
+      ? props.cover
+      : `${process.env.REACT_APP_BASE_URL}/${props.cover}`;
   return (
     <div className="post">
       <div className="image">
         <Link to={`/post/${props._id}`}>
-          <img
-            src={
-              "https://fullstack-mern-blog-sigma.vercel.app/api/" + props.cover
-            }
-            alt=""
-          />
+          <img src={srcImage} alt="" />
         </Link>
       </div>
       <div className="texts">
@@ -26,3 +25,7 @@ export default function Post(props) {
     </div>
   );
 }
+
+/* props && props.includes("https://")
+      ? props.cover
+      : "http://localhost:3001/" + props.cover; */

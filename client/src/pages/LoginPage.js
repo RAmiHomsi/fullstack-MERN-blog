@@ -9,15 +9,12 @@ export default function LoginPage() {
   const { setUserInfo } = useContext(UserContext);
   async function login(ev) {
     ev.preventDefault();
-    const response = await fetch(
-      "https://fullstack-mern-blog-sigma.vercel.app/api/login",
-      {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      }
-    );
+    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/login`, {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
     if (response.ok) {
       response.json().then((userInfo) => {
         setUserInfo(userInfo);

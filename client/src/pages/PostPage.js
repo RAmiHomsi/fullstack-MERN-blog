@@ -8,13 +8,11 @@ export default function PostPage() {
   const { userInfo } = useContext(UserContext);
   const { id } = useParams();
   useEffect(() => {
-    fetch(`https://fullstack-mern-blog-sigma.vercel.app/api/post/${id}`).then(
-      (response) => {
-        response.json().then((postInfo) => {
-          setPostInfo(postInfo);
-        });
-      }
-    );
+    fetch(`${process.env.REACT_APP_BASE_URL}/post/${id}`).then((response) => {
+      response.json().then((postInfo) => {
+        setPostInfo(postInfo);
+      });
+    });
   }, [id]);
 
   if (!postInfo) return "";
@@ -47,7 +45,11 @@ export default function PostPage() {
       )}
       <div className="image">
         <img
-          src={`https://fullstack-mern-blog-sigma.vercel.app/api/${postInfo.cover}`}
+          src={
+            postInfo && postInfo.cover && postInfo.cover.includes("https://") //s3 image url
+              ? postInfo.cover
+              : `${process.env.REACT_APP_BASE_URL}/${postInfo.cover}`
+          }
           alt=""
         />
       </div>

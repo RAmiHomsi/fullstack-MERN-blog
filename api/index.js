@@ -10,26 +10,24 @@ const cors = require("cors");
 const multer = require("multer");
 const uploadMiddleware = multer({ dest: "uploads/" });
 const fs = require("fs");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 app.use(express.json());
 app.use(cookieParser());
-// Allow all origins
-app.use(cors());
-
-// Allow specific origin(s)
-app.use(
-  cors({
-    origin: [
-      "https://fullstack-mern-blog-sigma.vercel.app/api",
-      "http://localhost:3000/api",
-    ],
-    methods: ["POST", "GET", "DELETE", "PUT"],
-    credentials: true,
-  })
-);
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 app.use("/uploads", express.static(__dirname + "/uploads"));
 
 require("dotenv").config();
+
+// Initialize AWS S3 client
+const bucket = "mern-blogg";
+const s3Client = new S3Client({
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: process.env.MY_S3_ACCESS_KEY,
+    secretAccessKey: process.env.MY_S3_SECRET_KEY,
+  },
+});
 
 mongoose
   .connect(process.env.MONGO_URL, { useNewUrlParser: true })
@@ -43,7 +41,7 @@ mongoose
     console.error(err);
   });
 
-app.post("/api/register", async (req, res) => {
+app.post("/register", async (req, res) => {
   try {
     const user = await UserModel.create({
       username: req.body.username,
@@ -57,7 +55,7 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
-app.post("/api/login", async (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   const userDoc = await UserModel.findOne({ username });
 
@@ -92,7 +90,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.get("/api/profile", async (req, res) => {
+app.get("/profile", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
   const { token } = req.cookies;
   if (token) {
@@ -111,17 +109,36 @@ app.get("/api/profile", async (req, res) => {
   }); */
 });
 
-app.post("/api/logout", (req, res) => {
+app.post("/logout", (req, res) => {
   res.cookie("token", "").json("ok");
 });
 
 // name file coming from FormData
-app.post("/api/post", uploadMiddleware.single("file"), async (req, res) => {
+app.post("/post", uploadMiddleware.single("file"), async (req, res) => {
+  // Extract file information
   const { originalname, path } = req.file;
   const parts = originalname.split(".");
-  const extention = parts[parts.length - 1];
-  const newPath = path + "." + extention;
+  const extension = parts[parts.length - 1];
+  const newPath = Date.now() + "." + extension;
   fs.renameSync(path, newPath);
+
+  // Upload file to S3
+  try {
+    const uploadParams = {
+      Bucket: bucket,
+      Key: newPath,
+      Body: fs.readFileSync(newPath),
+      ContentType: req.file.mimetype,
+      ACL: "public-read",
+    };
+    await s3Client.send(new PutObjectCommand(uploadParams));
+  } catch (err) {
+    console.error("Error uploading file to S3:", err);
+    return res.status(500).json({ error: "Failed to upload file to S3" });
+  }
+
+  // save the S3 URL in your database or use it as needed
+  const s3Url = `https://${bucket}.s3.amazonaws.com/${newPath}`;
 
   const { token } = req.cookies;
   jwt.verify(token, process.env.JWT_SECRET, async (err, info) => {
@@ -131,22 +148,38 @@ app.post("/api/post", uploadMiddleware.single("file"), async (req, res) => {
       summary: req.body.summary,
       content: req.body.content,
       author: info.id,
-      cover: newPath,
+      cover: newPath ? s3Url : newPath, // Store S3 URL in the database
     });
     res.json(postDoc);
   });
 });
 
-app.put("/api/post", uploadMiddleware.single("file"), async (req, res) => {
+app.put("/post", uploadMiddleware.single("file"), async (req, res) => {
   let newPath = null;
   if (req.file) {
     const { originalname, path } = req.file;
     const parts = originalname.split(".");
     const ext = parts[parts.length - 1];
-    newPath = path + "." + ext;
+    newPath = Date.now() + "." + ext;
     fs.renameSync(path, newPath);
   }
 
+  // Upload file to S3 if newPath exists
+  if (newPath) {
+    try {
+      const uploadParams = {
+        Bucket: bucket,
+        Key: newPath,
+        Body: fs.readFileSync(newPath),
+        ContentType: req.file.mimetype,
+        ACL: "public-read",
+      };
+      await s3Client.send(new PutObjectCommand(uploadParams));
+    } catch (err) {
+      console.error("Error uploading file to S3:", err);
+      return res.status(500).json({ error: "Failed to upload file to S3" });
+    }
+  }
   const { token } = req.cookies;
   jwt.verify(token, process.env.JWT_SECRET, async (err, info) => {
     if (err) throw err;
@@ -154,7 +187,7 @@ app.put("/api/post", uploadMiddleware.single("file"), async (req, res) => {
     const postDoc = await PostModel.findById(id);
     const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
     if (!isAuthor) {
-      return res.status(400).json("you are not the author");
+      return res.status(400).json("You are not the author");
     }
     // Using findOneAndUpdate to update the document
     const updatedPost = await PostModel.findOneAndUpdate(
@@ -164,7 +197,9 @@ app.put("/api/post", uploadMiddleware.single("file"), async (req, res) => {
           title,
           summary,
           content,
-          cover: newPath ? newPath : postDoc.cover,
+          cover: newPath
+            ? `https://${bucket}.s3.amazonaws.com/${newPath}`
+            : postDoc.cover, // Update cover URL if newPath exists
         },
       }, // update
       { new: true } // options to return the updated document
@@ -174,7 +209,7 @@ app.put("/api/post", uploadMiddleware.single("file"), async (req, res) => {
   });
 });
 
-app.get("/api/post", async (req, res) => {
+app.get("/post", async (req, res) => {
   const posts = await PostModel.find()
     .populate("author", ["username"])
     .sort({ createdAt: -1 })
@@ -182,7 +217,7 @@ app.get("/api/post", async (req, res) => {
   res.json(posts);
 });
 
-app.get("/api/post/:id", async (req, res) => {
+app.get("/post/:id", async (req, res) => {
   const { id } = req.params;
   const postDoc = await PostModel.findById(id).populate("author", ["username"]);
   res.json(postDoc);

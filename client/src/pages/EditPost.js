@@ -11,15 +11,13 @@ export default function EditPost() {
   const [redirect, setRedirect] = useState(false);
 
   useEffect(() => {
-    fetch("https://fullstack-mern-blog-sigma.vercel.app/api/post/" + id).then(
-      (response) => {
-        response.json().then((postInfo) => {
-          setTitle(postInfo.title);
-          setContent(postInfo.content);
-          setSummary(postInfo.summary);
-        });
-      }
-    );
+    fetch(`${process.env.REACT_APP_BASE_URL}/post/${id}`).then((response) => {
+      response.json().then((postInfo) => {
+        setTitle(postInfo.title);
+        setContent(postInfo.content);
+        setSummary(postInfo.summary);
+      });
+    });
   }, [id]);
 
   async function updatePost(ev) {
@@ -32,14 +30,11 @@ export default function EditPost() {
     if (files?.[0]) {
       data.set("file", files?.[0]);
     }
-    const response = await fetch(
-      "https://fullstack-mern-blog-sigma.vercel.app/api/post",
-      {
-        method: "PUT",
-        body: data,
-        credentials: "include",
-      }
-    );
+    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/post`, {
+      method: "PUT",
+      body: data,
+      credentials: "include",
+    });
     if (response.ok) {
       setRedirect(true);
     }

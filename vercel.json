@@ -3,7 +3,7 @@
   "outputDirectory": "client/build",
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "destination": "/api/index.js"
     },
     { "source": "/(.*)", "destination": "/" }

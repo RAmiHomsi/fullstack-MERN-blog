@@ -6,14 +6,11 @@ export default function RegisterPage() {
 
   async function register(ev) {
     ev.preventDefault();
-    const response = await fetch(
-      "https://fullstack-mern-blog-sigma.vercel.app/api/register",
-      {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/register`, {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+      headers: { "Content-Type": "application/json" },
+    });
     if (response.status === 200) {
       alert("registration successful");
     } else {

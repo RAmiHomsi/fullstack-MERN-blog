@@ -18,14 +18,11 @@ export default function CreatePost() {
     data.set("file", files[0]); //pick first file i added
 
     ev.preventDefault();
-    const response = await fetch(
-      "https://fullstack-mern-blog-sigma.vercel.app/api/post",
-      {
-        method: "POST",
-        body: data,
-        credentials: "include",
-      }
-    );
+    const response = await fetch(`${process.env.REACT_APP_BASE_URL}/post`, {
+      method: "POST",
+      body: data,
+      credentials: "include",
+    });
     if (response.ok) {
       setRedirect(true);
     }
