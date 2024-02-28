@@ -17,7 +17,10 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["", "http://localhost:3000"],
+    origin: [
+      "https://fullstack-mern-blog-chi.vercel.app",
+      "http://localhost:3000",
+    ],
     methods: ["POST", "GET", "DELETE", "PUT"],
     credentials: true,
   })
