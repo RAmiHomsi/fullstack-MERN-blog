@@ -15,7 +15,10 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["https://rami-news.vercel.app/api", "http://localhost:3000"],
+    origin: [
+      "https://rami-fullstack-news.vercel.app/api",
+      "http://localhost:3000",
+    ],
     methods: ["POST", "GET", "DELETE", "PUT"],
     credentials: true,
   })
