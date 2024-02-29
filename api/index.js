@@ -8,8 +8,6 @@ const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const multer = require("multer");
-const uploadMiddleware = multer({ dest: "uploads/" });
-const fs = require("fs");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 app.use(express.json());
@@ -22,7 +20,6 @@ app.use(
     credentials: true,
   })
 );
-app.use("/uploads", express.static(__dirname + "/uploads"));
 
 require("dotenv").config();
 
@@ -120,21 +117,31 @@ app.post("/api/logout", (req, res) => {
 });
 
 // name file coming from FormData
-app.post("/api/post", uploadMiddleware.single("file"), async (req, res) => {
-  // Extract file information
-  const { originalname, path } = req.file;
-  const parts = originalname.split(".");
-  const extension = parts[parts.length - 1];
-  const newPath = Date.now() + "." + extension;
-  fs.renameSync(path, newPath);
+// Multer configuration
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
-  // Upload file to S3
+app.post("/api/post", upload.single("file"), async (req, res) => {
+  // Access form data using req.body
+  const { title, summary, content } = req.body;
+
+  // Access file using req.file
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  const extension = file.originalname.split(".")[1];
+  const newPath = Date.now() + "." + extension;
+
+  // Assuming you have defined s3Client and bucket elsewhere
   try {
     const uploadParams = {
       Bucket: bucket,
       Key: newPath,
-      Body: fs.readFileSync(newPath),
-      ContentType: req.file.mimetype,
+      Body: file.buffer,
+      ContentType: file.mimetype,
       ACL: "public-read",
     };
     await s3Client.send(new PutObjectCommand(uploadParams));
@@ -143,41 +150,36 @@ app.post("/api/post", uploadMiddleware.single("file"), async (req, res) => {
     return res.status(500).json({ error: "Failed to upload file to S3" });
   }
 
-  // save the S3 URL in your database or use it as needed
-  const s3Url = `https://${bucket}.s3.amazonaws.com/${newPath}`;
-
+  // Assuming you have defined PostModel elsewhere
   const { token } = req.cookies;
   jwt.verify(token, process.env.JWT_SECRET, async (err, info) => {
     if (err) throw err;
     const postDoc = await PostModel.create({
-      title: req.body.title,
-      summary: req.body.summary,
-      content: req.body.content,
+      title,
+      summary,
+      content,
       author: info.id,
-      cover: newPath ? s3Url : newPath, // Store S3 URL in the database
+      cover: `https://${bucket}.s3.amazonaws.com/${newPath}`,
     });
     res.json(postDoc);
   });
 });
 
-app.put("/api/post", uploadMiddleware.single("file"), async (req, res) => {
+app.put("/api/post", upload.single("file"), async (req, res) => {
   let newPath = null;
   if (req.file) {
-    const { originalname, path } = req.file;
+    const { originalname, buffer, mimetype } = req.file;
     const parts = originalname.split(".");
     const ext = parts[parts.length - 1];
     newPath = Date.now() + "." + ext;
-    fs.renameSync(path, newPath);
-  }
 
-  // Upload file to S3 if newPath exists
-  if (newPath) {
+    // Upload file to S3
     try {
       const uploadParams = {
         Bucket: bucket,
         Key: newPath,
-        Body: fs.readFileSync(newPath),
-        ContentType: req.file.mimetype,
+        Body: buffer,
+        ContentType: mimetype,
         ACL: "public-read",
       };
       await s3Client.send(new PutObjectCommand(uploadParams));
@@ -186,6 +188,7 @@ app.put("/api/post", uploadMiddleware.single("file"), async (req, res) => {
       return res.status(500).json({ error: "Failed to upload file to S3" });
     }
   }
+
   const { token } = req.cookies;
   jwt.verify(token, process.env.JWT_SECRET, async (err, info) => {
     if (err) throw err;
@@ -195,6 +198,7 @@ app.put("/api/post", uploadMiddleware.single("file"), async (req, res) => {
     if (!isAuthor) {
       return res.status(400).json("You are not the author");
     }
+
     // Using findOneAndUpdate to update the document
     const updatedPost = await PostModel.findOneAndUpdate(
       { _id: id }, // filter
